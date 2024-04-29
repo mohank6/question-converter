@@ -1,13 +1,14 @@
 from concurrent.futures import ThreadPoolExecutor
 import json
 import os
-from openai import OpenAI, model
+from openai import OpenAI
 import logging
 from time import perf_counter, sleep
 import re
-import threading
 from threading import RLock
+from dotenv import load_dotenv
 
+load_dotenv()
 
 log_format = '%(asctime)s - %(levelname)s - %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=log_format)
@@ -88,6 +89,7 @@ def convert_question(input_data):
             reponse_data.append(data)
             with lock:
                 save_data(reponse_data, converted_qno)
+            log.info(f'Converted question {data["Qno"]}')
 
         except:
             with lock:
@@ -116,21 +118,31 @@ def save_data(data):
         return None
 
 
+def save_status():
+    with open(f'converted/success.json', 'w') as fp:
+        json.dump(converted_qno, fp)
+    with open(f'converted/failed.json', 'w') as fp:
+        json.dump(failed_qno, fp)
+
+
 def main():
     WAIT_TIME = 3
     start_time = perf_counter()
-    executor = ThreadPoolExecutor()
+    executor = ThreadPoolExecutor(max_workers=1)
+    OPENAI_KEY_1 = os.getenv('OPENAI_KEY_1')
 
-    print(executor._max_workers)
-    print(os.cpu_count())
+    # print(executor._max_workers)
+    # print(os.cpu_count())
 
     input_data = get_data()
     for data in input_data:
-        executor.submit(convert_question, data)
+        log.info(f'Converting question {data["Qno"]}')
+        executor.submit(convert_question, data, OPENAI_KEY_1)
         # thread_list.append(executor.submit(create_browser, user, lock))
         sleep(WAIT_TIME)
 
     executor.shutdown()
+    save_status()
     end_time = perf_counter()
     time_delta = end_time - start_time
     minutes, seconds = divmod(time_delta, 60)

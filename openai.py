@@ -13,25 +13,25 @@ logging.basicConfig(level=logging.DEBUG, format=log_format)
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 
-PRO = bool(strtobool(os.getenv('PRO', 'False')))
-if PRO:
-    OPENAI_KEY = os.getenv('OPENAI_PRO_KEY')
-    model = "gpt-4-turbo"
-else:
-    OPENAI_KEY = os.getenv('OPENAI_KEY')
-    model = "gpt-3.5-turbo"
+# PRO = bool(strtobool(os.getenv('PRO', 'False')))
+# if PRO:
+#     OPENAI_KEY = os.getenv('OPENAI_PRO_KEY')
+#     model = "gpt-4-turbo"
+# else:
+#     OPENAI_KEY = os.getenv('OPENAI_KEY')
+model = "gpt-3.5-turbo"
 log.info(f"model: {model}")
 
 
 class OpenAI:
 
     @staticmethod
-    def get_headers():
+    def get_headers(OPENAI_KEY):
         headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {OPENAI_KEY}'}
         return headers
 
     @classmethod
-    def generate_completion(cls, SYSTEM_PROMPT, USER_PROMPT):
+    def generate_completion(cls, SYSTEM_PROMPT, USER_PROMPT, OPENAI_KEY):
         url = 'https://api.openai.com/v1/chat/completions'
         system_content = SYSTEM_PROMPT
         user_content = USER_PROMPT
@@ -46,7 +46,7 @@ class OpenAI:
 
         try:
             log.info('Sending request to openai api.')
-            response = requests.post(url, json=data, headers=cls.get_headers())
+            response = requests.post(url, json=data, headers=cls.get_headers(OPENAI_KEY))
 
             if response.status_code != 200:
                 log.debug(f'OpenAI api did not send 200 status code: {response.status_code}')
