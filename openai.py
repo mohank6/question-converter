@@ -8,7 +8,7 @@ from distutils.util import strtobool
 load_dotenv()
 
 
-log_format = '%(asctime)s - %(levelname)s - %(message)s'
+log_format = '[ %(levelname)s] [%(asctime)s] [%(module)s] [%(lineno)s] [%(message)s]'
 logging.basicConfig(level=logging.DEBUG, format=log_format)
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)

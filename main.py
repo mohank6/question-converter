@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-log_format = '%(asctime)s - %(levelname)s - %(message)s'
+log_format = '[ %(levelname)s] [%(asctime)s] [%(module)s] [%(lineno)s] [%(message)s]'
 logging.basicConfig(level=logging.DEBUG, format=log_format)
 
 file_handler = logging.FileHandler('logfile.log')
@@ -75,25 +75,36 @@ def get_data():
 
 def convert_question(input_data, OPENAI_KEY):
     reponse_data = []
-    for i in input_data:
-        try:
-            qno = i.pop("Qno")
-            if qno in convert_question:
-                log.debug(f'{qno} already converted')
-                continue
-            USER_PROMPT = str(i)
-            data = OpenAI.generate_completion(SYSTEM_PROMPT, USER_PROMPT, OPENAI_KEY)
-            data["Qno"] = qno
-            with lock:
-                converted_qno.append(qno)
-            reponse_data.append(data)
-            with lock:
-                save_data(reponse_data, converted_qno)
-            log.info(f'Converted question {data["Qno"]}')
+    qno = input_data.pop("Qno")
+    if qno in converted_qno:
+        log.debug(f'{qno} already converted')
+        return
+    try:
+        USER_PROMPT = str(input_data)
+        data = OpenAI.generate_completion(SYSTEM_PROMPT, USER_PROMPT, OPENAI_KEY)
+        if not data:
+            raise Exception('Opena ai didnot respond')
+        data["Qno"] = qno
+        with lock:
+            converted_qno.append(qno)
+        reponse_data.append(data)
+        with lock:
+            save_data(reponse_data)
+        log.info(f'Converted question {data["Qno"]}')
 
-        except:
-            with lock:
-                failed_qno.append(qno)
+    except Exception as e:
+        log.error(str(e))
+        with lock:
+            failed_qno.append(qno)
+
+
+def get_converted_questions():
+    question_path = 'converted/questions_1.json'
+    if os.path.exists(question_path):
+        with open(question_path, 'r') as fp:
+            file_data = json.load(fp)
+        return [data['Qno'] for data in file_data]
+    return []
 
 
 def save_input_data(data):
@@ -102,14 +113,16 @@ def save_input_data(data):
 
 
 def save_data(data):
+    question_path = 'converted/questions_1.json'
     try:
-        with open(f'converted/questions_1.json', 'r') as fp:
-            file_data = json.load(fp)
+        if os.path.exists(question_path):
+            with open(question_path, 'r') as fp:
+                file_data = json.load(fp)
 
-        with open(f'converted/questions_1_copy.json', 'w') as fp:
-            json.dump(file_data, fp, ensure_ascii=False)
+            with open(f'converted/questions_1_copy.json', 'w') as fp:
+                json.dump(file_data, fp, ensure_ascii=False)
 
-        with open(f'converted/questions_1.json', 'a') as fp:
+        with open(question_path, 'w') as fp:
             json.dump(data, fp, ensure_ascii=False)
         return True
 
@@ -126,7 +139,7 @@ def save_status():
 
 
 def main():
-    WAIT_TIME = 3
+    WAIT_TIME = 5
     start_time = perf_counter()
     executor = ThreadPoolExecutor(max_workers=1)
     OPENAI_KEY_1 = os.getenv('OPENAI_KEY_1')
@@ -135,6 +148,11 @@ def main():
     # print(os.cpu_count())
 
     input_data = get_data()
+    converted_qno.extend(get_converted_questions())
+
+    log.info(converted_qno)
+    # print(len(input_data))
+
     for data in input_data:
         log.info(f'Converting question {data["Qno"]}')
         executor.submit(convert_question, data, OPENAI_KEY_1)
@@ -153,6 +171,9 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt as e:
-        log.error(str(e))
+        log.error('Keyboard Interruption')
+        exit(1)
+
     except Exception as e:
         log.error(str(e))
+        exit(1)
