@@ -73,7 +73,7 @@ def get_data():
     return input_data
 
 
-def convert_question(input_data):
+def convert_question(input_data, OPENAI_KEY):
     reponse_data = []
     for i in input_data:
         try:
@@ -82,7 +82,7 @@ def convert_question(input_data):
                 log.debug(f'{qno} already converted')
                 continue
             USER_PROMPT = str(i)
-            data = OpenAI.generate_completion(SYSTEM_PROMPT, USER_PROMPT)
+            data = OpenAI.generate_completion(SYSTEM_PROMPT, USER_PROMPT, OPENAI_KEY)
             data["Qno"] = qno
             with lock:
                 converted_qno.append(qno)
