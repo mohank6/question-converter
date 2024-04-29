@@ -3,16 +3,24 @@ import json
 import requests
 from dotenv import load_dotenv
 import os
+from distutils.util import strtobool
 
 load_dotenv()
-
-OPENAI_KEY = os.getenv('OPENAI_KEY')
 
 
 log_format = '%(asctime)s - %(levelname)s - %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=log_format)
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
+
+PRO = bool(strtobool(os.getenv('PRO', 'False')))
+if PRO:
+    OPENAI_KEY = os.getenv('OPENAI_PRO_KEY')
+    model = "gpt-4-turbo"
+else:
+    OPENAI_KEY = os.getenv('OPENAI_KEY')
+    model = "gpt-3.5-turbo"
+log.info(f"model: {model}")
 
 
 class OpenAI:
@@ -28,12 +36,12 @@ class OpenAI:
         system_content = SYSTEM_PROMPT
         user_content = USER_PROMPT
         data = {
-            "model": "gpt-3.5-turbo",
+            "model": model,
             "response_format": {"type": "json_object"},
             "messages": [{"role": "system", "content": system_content}, {"role": "user", "content": [{"type": "text", "text": user_content}]}],
-            "max_tokens": 2000,
-            "temperature": 1,
-            # "top_p": 1
+            "max_tokens": 3000,
+            "temperature": 0.4,
+            "top_p": 1
         }
 
         try:
@@ -42,8 +50,10 @@ class OpenAI:
 
             if response.status_code != 200:
                 log.debug(f'OpenAI api did not send 200 status code: {response.status_code}')
+                log.debug(f'Response: {response.json()["error"]}')
                 return None
             data = response.json()
+            log.info(f"Total tokens: {data['usage']['total_tokens']} | Completion Tokens: {data['usage']['completion_tokens']}")
             data_string = data['choices'][0]['message']['content']
             try:
                 cleaned_data_string = data_string.replace('```json', '').replace('```', '').strip()
@@ -69,7 +79,7 @@ class OpenAI:
         url = 'https://api.openai.com/v1/chat/completions'
 
         data = {
-            "model": "gpt-3.5-turbo",
+            "model": model,
             "response_format": {"type": "json_object"},
             "messages": [
                 {
