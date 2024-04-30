@@ -19,6 +19,7 @@ log.setLevel(logging.DEBUG)
 #     model = "gpt-4-turbo"
 # else:
 #     OPENAI_KEY = os.getenv('OPENAI_KEY')
+# model = "gpt-4-turbo"
 model = "gpt-3.5-turbo"
 log.info(f"model: {model}")
 
@@ -39,9 +40,9 @@ class OpenAI:
             "model": model,
             "response_format": {"type": "json_object"},
             "messages": [{"role": "system", "content": system_content}, {"role": "user", "content": [{"type": "text", "text": user_content}]}],
-            "max_tokens": 3000,
+            "max_tokens": 4000,
             "temperature": 0.4,
-            "top_p": 1
+            "top_p": 0.8
         }
 
         try:
@@ -59,7 +60,8 @@ class OpenAI:
                 cleaned_data_string = data_string.replace('```json', '').replace('```', '').strip()
                 json_data = json.loads(cleaned_data_string)
             except:
-                json_data = cls.fix_response(data_string)
+                log.debug(f'Invalid json format: {cleaned_data_string}')
+                return None
 
             required_keys = ['statement', 'hint']
 
