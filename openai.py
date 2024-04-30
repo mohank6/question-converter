@@ -63,7 +63,7 @@ class OpenAI:
 
             required_keys = ['statement', 'hint']
 
-            if set(required_keys) - set(json_data.keys()):
+            if set(required_keys) != set(json_data.keys()):
                 log.debug(f'OpenAI api sent invalid keys: {json_data.keys()}')
                 return None
 
