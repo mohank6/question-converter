@@ -52,7 +52,7 @@ class OpenAI:
             if response.status_code != 200:
                 log.debug(f'OpenAI api did not send 200 status code: {response.status_code}')
                 log.debug(f'Response: {response.json()["error"]}')
-                return None
+                return None, response.json()["error"]
             data = response.json()
             log.info(f"Total tokens: {data['usage']['total_tokens']} | Completion Tokens: {data['usage']['completion_tokens']}")
             data_string = data['choices'][0]['message']['content']
@@ -61,20 +61,20 @@ class OpenAI:
                 json_data = json.loads(cleaned_data_string)
             except:
                 log.debug(f'Invalid json format: {cleaned_data_string}')
-                return None
+                return None, None
 
             required_keys = ['statement', 'hint']
 
             if set(required_keys) != set(json_data.keys()):
                 log.debug(f'OpenAI api sent invalid keys: {json_data.keys()}')
-                return None
+                return None, None
 
-            log.info('Request successfull.')
-            return json_data
+            log.info('Request successfull')
+            return json_data, None
 
         except Exception as e:
             log.error(f'Error occured while generating remarks: {str(e)}')
-            return None
+            return None, None
 
     @classmethod
     def fix_response(cls, content):
