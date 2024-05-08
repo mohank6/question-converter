@@ -51,7 +51,7 @@ class OpenAI:
 
             if response.status_code != 200:
                 log.debug(f'OpenAI api did not send 200 status code: {response.status_code}')
-                log.debug(f'Response: {response.json()["error"]}')
+                log.debug(f'Response: {response.json().get("error", None)}')
                 return None, response.json()["error"]
             data = response.json()
             log.info(f"Total tokens: {data['usage']['total_tokens']} | Completion Tokens: {data['usage']['completion_tokens']}")
