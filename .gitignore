@@ -4,3 +4,4 @@ response/
 example/
 __pycache__/
 .env
+logfile.log
