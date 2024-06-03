@@ -3,7 +3,7 @@ import json
 import requests
 from dotenv import load_dotenv
 import os
-from distutils.util import strtobool
+
 
 load_dotenv()
 
@@ -36,14 +36,8 @@ class OpenAI:
         url = 'https://api.openai.com/v1/chat/completions'
         system_content = SYSTEM_PROMPT
         user_content = USER_PROMPT
-        data = {
-            "model": model,
-            "response_format": {"type": "json_object"},
-            "messages": [{"role": "system", "content": system_content}, {"role": "user", "content": [{"type": "text", "text": user_content}]}],
-            "max_tokens": 4000,
-            "temperature": 0.4,
-            "top_p": 0.8
-        }
+        data = {"model": model, "response_format": {"type": "json_object"}, "messages": [{"role": "system", "content": system_content}, {
+            "role": "user", "content": [{"type": "text", "text": user_content}]}], "max_tokens": 4000, "temperature": 0.4, "top_p": 0.8}
 
         try:
             log.info('Sending request to openai api.')
@@ -54,7 +48,8 @@ class OpenAI:
                 log.debug(f'Response: {response.json().get("error", None)}')
                 return None, response.json()["error"]
             data = response.json()
-            log.info(f"Total tokens: {data['usage']['total_tokens']} | Completion Tokens: {data['usage']['completion_tokens']}")
+            log.info(f"Total tokens: {data['usage']['total_tokens']} | Completion Tokens: {
+                     data['usage']['completion_tokens']}")
             data_string = data['choices'][0]['message']['content']
             try:
                 cleaned_data_string = data_string.replace('```json', '').replace('```', '').strip()
