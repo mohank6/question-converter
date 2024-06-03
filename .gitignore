@@ -3,3 +3,4 @@ temp/
 response/
 example/
 __pycache__/
+.env
